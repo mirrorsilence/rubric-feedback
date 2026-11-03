@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rubric Feedback Bot</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Chewy&family=Nunito:wght@400;600;800&family=Caveat:wght@600&display=swap" rel="stylesheet">
+<style>
+  :root{--paper:#F1F0EB;--card:#FBFAF6;--ink:#1C1C1C;--muted:#5A5955;--yellow:#FFDD3C;--blue:#BFE0F5;--green:#C9EBC4;--grey:#DEDBD2;--pass:#1F7A3E;--fail:#B3261E;--shadow:5px 5px 0 #1C1C1C}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:Nunito,Arial,sans-serif;font-size:18px;line-height:1.45}
+  .wrap{max-width:1100px;margin:0 auto;padding:28px 16px 64px}
+  h1,h2,h3{font-family:Chewy,'Trebuchet MS',cursive;font-weight:400;letter-spacing:.5px;margin:0}
+  h1{font-size:clamp(40px,7vw,72px);line-height:1;transform:rotate(-2deg);transform-origin:left}
+  h2{font-size:32px;margin-bottom:12px}
+  h3{font-size:24px;margin-bottom:6px}
+  .hand{font-family:Caveat,'Brush Script MT',cursive;font-size:28px}
+  .muted{color:var(--muted)}
+  .card{background:var(--card);border:3px solid var(--ink);border-radius:22px;box-shadow:var(--shadow);padding:22px;margin-top:24px}
+  .dark{background:var(--ink);color:var(--paper)} .dark .muted{color:#C9C6BE} .dark a{color:var(--yellow)}
+  header{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+  .badge{display:inline-block;background:var(--ink);color:var(--paper);border-radius:12px;padding:2px 12px;font-family:Chewy,cursive;font-size:20px}
+  .noai{display:inline-block;background:var(--yellow);border:3px solid var(--ink);border-radius:14px;padding:4px 14px;font-family:Chewy,cursive;font-size:26px;transform:rotate(4deg)}
+  .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:24px}
+  .step{background:var(--card);border:3px solid var(--ink);border-radius:18px;padding:16px;box-shadow:var(--shadow)}
+  .step b{display:block;font-family:Chewy,cursive;font-weight:400;font-size:23px;margin:6px 0 4px}
+  .tabs{display:flex;gap:12px;flex-wrap:wrap;margin-top:28px}
+  button{font-family:Nunito,Arial,sans-serif;font-weight:800;font-size:17px;border:3px solid var(--ink);border-radius:14px;padding:10px 16px;cursor:pointer;background:var(--card);color:var(--ink);box-shadow:3px 3px 0 var(--ink);transition:transform .1s,box-shadow .1s}
+  button:active{transform:translate(3px,3px);box-shadow:0 0 0 var(--ink)}
+  button.on{background:var(--ink);color:var(--paper)}
+  button.go{background:var(--yellow);font-size:20px}
+  textarea{width:100%;min-height:150px;margin-top:12px;font:inherit;padding:14px;border:3px solid var(--ink);border-radius:14px;background:#fff;color:var(--ink);resize:vertical}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:12px}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:16px}
+  .fb{border:3px solid var(--ink);border-radius:16px;padding:14px;background:#fff;opacity:0;transform:translateY(10px)}
+  .fb.show{opacity:1;transform:none;transition:opacity .35s,transform .35s}
+  .fb.next{background:var(--yellow)}
+  .fb ul{margin:6px 0 0;padding-left:20px}
+  .ok{color:var(--pass);font-weight:800} .no{color:var(--fail);font-weight:800}
+  .scoreline{display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+  .stamp{font-family:Chewy,cursive;font-size:56px;line-height:1;padding:6px 18px;border:4px solid var(--ink);border-radius:16px;background:var(--card);transform:scale(0) rotate(-12deg)}
+  .stamp.show{transform:scale(1) rotate(-6deg);transition:transform .45s cubic-bezier(.3,1.6,.5,1)}
+  .stamp.full{background:var(--yellow)}
+  .flag{background:var(--ink);color:var(--paper);border-radius:12px;padding:8px 14px;font-weight:800}
+  .answer{border:2px dashed var(--ink);border-radius:14px;padding:14px;margin-top:14px;background:#fff;line-height:1.9}
+  mark{border-radius:6px;padding:1px 3px;color:var(--ink);border-bottom:3px solid var(--ink)}
+  mark sup{font-size:12px;font-weight:800;text-transform:uppercase;margin-left:2px}
+  .m0{background:var(--yellow)} .m1{background:var(--blue)} .m2{background:var(--green)} .m3{background:var(--grey)}
+  table{width:100%;border-collapse:collapse;margin-top:10px;font-size:16px}
+  th,td{border:2px solid var(--ink);padding:7px 9px;text-align:left;vertical-align:top}
+  th{background:var(--ink);color:var(--paper)}
+  .rules code{background:#fff;border:1px solid #ccc;border-radius:6px;padding:0 4px;font-size:15px}
+  details summary{cursor:pointer;font-family:Chewy,cursive;font-size:26px}
+  .status{display:flex;align-items:center;gap:14px;margin-top:8px}
+  .dot{width:22px;height:22px;border-radius:50%;flex:none;border:3px solid var(--paper)}
+  .dot.run{background:#E3B341;animation:pulse 1s infinite} .dot.ok{background:#3FB950} .dot.bad{background:#F85149} .dot.none{background:#8A877F}
+  @keyframes pulse{50%{opacity:.35}}
+  #qr{background:#fff;padding:10px;border-radius:12px;display:inline-block;margin-top:10px;border:3px solid var(--ink)}
+  #qr img,#qr canvas{display:block;width:170px;height:170px}
+  .url{font-family:'Courier New',monospace;font-weight:700;word-break:break-all;margin-top:8px}
+  .two{display:grid;grid-template-columns:1.3fr 1fr;gap:24px}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+  @media (max-width:800px){.steps,.grid3,.two{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div>
+    <p class="muted" style="margin:0 0 8px;font-weight:800;letter-spacing:1px">PED 509 · AUTOMATED SCORING &amp; FEEDBACK</p>
+    <h1>Rubric Feedback Bot</h1>
+    <p class="hand" style="margin:10px 0 0">Write an answer, get a score and three-part feedback in one second.</p>
+  </div>
+  <span class="noai">No AI · open rules</span>
+</header>
+
+<section class="steps" aria-label="How this was built">
+  <div class="step"><span class="badge">01</span><b>Rules on GitHub</b><span class="muted">The rubric and word lists are in <code>scorer.js</code>. Anyone can read them.</span></div>
+  <div class="step" style="background:var(--ink);color:var(--paper)"><span class="badge" style="background:var(--yellow);color:var(--ink)">02</span><b>Audited by GitHub Actions</b><span style="color:#C9C6BE">After every change, the bot is compared with a teacher’s scores.</span></div>
+  <div class="step"><span class="badge">03</span><b>Published by GitHub Pages</b><span class="muted">Free website: students try it on any phone.</span></div>
+</section>
+
+<div class="tabs" role="tablist">
+  <button class="on" data-task="spoon" role="tab">🔬 Science: the cold spoon</button>
+  <button data-task="argument" role="tab">✍️ Writing: phones in school</button>
+</div>
+
+<section class="card">
+  <h2 id="taskTitle"></h2>
+  <p id="taskPrompt" style="margin:0;font-weight:700"></p>
+  <p class="muted" style="margin:6px 0 0;font-size:15px">Answer in English, Russian or Kazakh.</p>
+  <label for="ans" class="muted" style="display:block;margin-top:10px;font-size:15px">Your answer</label>
+  <textarea id="ans" placeholder="Type your answer here…"></textarea>
+  <div class="row"><button class="go" id="go">Get feedback</button><span class="muted" style="font-size:15px">or try a sample:</span><span id="samples" class="row" style="margin:0"></span></div>
+</section>
+
+<section class="card" id="result" hidden aria-live="polite">
+  <div class="scoreline">
+    <h2 style="margin:0">Feedback</h2>
+    <div class="stamp" id="stamp">0/2</div>
+    <div id="flag"></div>
+  </div>
+  <div class="grid3">
+    <div class="fb" id="fbUp"><h3>Where am I going?</h3><p id="goal" style="margin:0"></p></div>
+    <div class="fb" id="fbBack"><h3>How am I going?</h3><ul id="crit"></ul></div>
+    <div class="fb next" id="fbNext"><h3>Where to next?</h3><ul id="next"></ul></div>
+  </div>
+  <h3 style="margin-top:18px">What the bot found in your answer</h3>
+  <div class="answer" id="marked"></div>
+  <p class="muted" id="legend" style="font-size:15px;margin:8px 0 0"></p>
+</section>
+
+<div class="two">
+  <section class="card">
+    <h2>Audit: does the bot agree with a teacher?</h2>
+    <p class="muted" style="margin:0">Sample answers scored by a teacher, then by the bot.</p>
+    <p style="margin:10px 0 0;font-weight:800">Agreement: <span id="agreeTxt" class="noai" style="font-size:22px;transform:rotate(-2deg)"></span></p>
+    <table><thead><tr><th>Answer</th><th>Teacher</th><th>Bot</th><th></th></tr></thead><tbody id="audit"></tbody></table>
+    <p class="muted" style="font-size:15px;margin:10px 0 0">A ✗ row is where the rules are too narrow. The teacher reviews it and improves the word lists.</p>
+  </section>
+  <section class="card dark">
+    <h2>Live from GitHub Actions</h2>
+    <p class="muted" style="margin:0">The latest audit run in the repository:</p>
+    <div class="status"><span class="dot none" id="dot"></span><div><div id="runTitle" style="font-weight:800">Loading…</div><div class="muted" id="runMeta" style="font-size:15px"></div></div></div>
+    <p style="margin:14px 0 0"><button id="refresh" style="background:var(--paper)">Refresh</button> <a id="runLink" href="#" target="_blank" rel="noopener" style="margin-left:8px">Open on GitHub</a></p>
+    <hr style="border:none;border-top:2px dashed #5A5955;margin:20px 0">
+    <h2 style="font-size:26px">Try it on your phone</h2>
+    <div id="qr" aria-label="QR code for this page"></div>
+    <div class="url" id="url"></div>
+  </section>
+</div>
+
+<section class="card rules">
+  <details>
+    <summary>Open rules: how the bot scores this task</summary>
+    <div id="rules" style="margin-top:12px"></div>
+  </details>
+</section>
+
+<footer class="muted" style="margin-top:28px;font-size:15px">No AI is used: every score comes from the open rules in <code>scorer.js</code>. <a id="repoLink" href="#" target="_blank" rel="noopener" style="color:var(--ink);font-weight:800">View or edit them on GitHub</a>.</footer>
+</div>
+
+<script src="scorer.js"></script>
+<script src="samples.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+var OWNER = 'mirrorsilence', REPO = 'rubric-feedback';
+(function(){
+  var m = location.hostname.match(/^([^.]+)\.github\.io$/i);
+  if (m) { OWNER = m[1]; var seg = location.pathname.split('/').filter(Boolean)[0]; if (seg && !/\.html?$/i.test(seg)) REPO = seg; }
+})();
+var REPO_URL = 'https://github.com/' + OWNER + '/' + REPO;
+document.getElementById('repoLink').href = REPO_URL;
+document.getElementById('runLink').href = REPO_URL + '/actions';
+
+var current = 'spoon';
+var MARK = { conducts: 0, hand: 1, claim: 0, evidence: 1, reason: 2, counter: 3 };
+
+function esc(s){ return String(s).replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+
+function setTask(id){
+  current = id;
+  var t = RubricBot.TASKS[id];
+  document.querySelectorAll('[data-task]').forEach(function(b){ b.classList.toggle('on', b.getAttribute('data-task') === id); b.setAttribute('aria-selected', b.getAttribute('data-task') === id); });
+  document.getElementById('taskTitle').textContent = t.title;
+  document.getElementById('taskPrompt').textContent = t.prompt;
+  document.getElementById('ans').value = '';
+  document.getElementById('result').hidden = true;
+  var box = document.getElementById('samples'); box.innerHTML = '';
+  RUBRIC_SAMPLES.filter(function(s){ return s.task === id && s.label; }).forEach(function(s){
+    var b = document.createElement('button'); b.textContent = s.label;
+    b.addEventListener('click', function(){ document.getElementById('ans').value = s.answer; run(); });
+    box.appendChild(b);
+  });
+  renderRules(t); renderAudit(id);
+}
+
+function run(){
+  var text = document.getElementById('ans').value;
+  var t = RubricBot.TASKS[current];
+  var r = RubricBot.score(current, text);
+  var res = document.getElementById('result'); res.hidden = false;
+  var stamp = document.getElementById('stamp');
+  stamp.classList.remove('show', 'full'); stamp.textContent = r.score + '/' + r.maxScore;
+  if (r.score === r.maxScore) stamp.classList.add('full');
+  document.getElementById('flag').innerHTML = r.teacherCheck.length ? '<span class="flag">👩‍🏫 Teacher check: ' + esc(r.teacherCheck.join(', ')) + '</span>' : '';
+  document.getElementById('goal').textContent = r.goal;
+  var crit = document.getElementById('crit'); crit.innerHTML = '';
+  r.criteria.forEach(function(c){
+    var li = document.createElement('li');
+    li.innerHTML = (c.ok ? '<span class="ok">✓ ' : '<span class="no">✗ ') + esc(c.label) + '</span>' + (c.found.length ? ' <span class="muted">(“' + esc(c.found.slice(0,3).join('”, “')) + '”)</span>' : '');
+    crit.appendChild(li);
+  });
+  r.warnings.forEach(function(w){ if (r.next.indexOf(w) === -1) { var li = document.createElement('li'); li.innerHTML = '<span class="no">⚠ ' + esc(w) + '</span>'; crit.appendChild(li); } });
+  var next = document.getElementById('next'); next.innerHTML = '';
+  r.next.slice(0, 2).forEach(function(n){ var li = document.createElement('li'); li.textContent = n; next.appendChild(li); });
+
+  // highlighted answer
+  var hs = r.highlights.slice().sort(function(a,b){ return a.start - b.start || b.end - a.end; });
+  var out = '', pos = 0;
+  hs.forEach(function(h){
+    if (h.start < pos) return;
+    var label = (t.criteria.filter(function(c){ return c.id === h.crit; })[0] || {}).label || h.crit;
+    out += esc(text.slice(pos, h.start)) + '<mark class="m' + MARK[h.crit] + '">' + esc(text.slice(h.start, h.end)) + '<sup>' + esc(label) + '</sup></mark>';
+    pos = h.end;
+  });
+  out += esc(text.slice(pos));
+  document.getElementById('marked').innerHTML = out || '<span class="muted">(empty)</span>';
+  document.getElementById('legend').textContent = hs.length ? 'Marked words are the evidence the bot used for each point.' : 'The bot found no words it could use. A teacher may still see a good idea here.';
+
+  ['fbUp','fbBack','fbNext'].forEach(function(id, i){ var el = document.getElementById(id); el.classList.remove('show'); setTimeout(function(){ el.classList.add('show'); }, 200 + i * 250); });
+  setTimeout(function(){ stamp.classList.add('show'); }, 950);
+}
+
+function renderRules(t){
+  var html = '<p style="margin:0 0 8px"><b>Points:</b> ' + t.criteria.map(function(c){ return esc(c.label) + ' (' + c.points + ')'; }).join(' · ') + ' · <b>max ' + t.maxScore + '</b></p>';
+  t.criteria.forEach(function(c){
+    html += '<p style="margin:8px 0 2px"><b>' + esc(c.label) + '</b> — the answer must contain: ' + c.match.map(function(group){
+      return group.map(function(k){ return '<i>' + k.toLowerCase() + '</i> word'; }).join(' + ');
+    }).join(' <b>or</b> ') + '</p>';
+  });
+  Object.keys(t.words).forEach(function(k){
+    html += '<p style="margin:4px 0"><b>' + k.toLowerCase() + ' words:</b> ' + t.words[k].map(function(w){ return '<code>' + esc(w === '#NUMBER' ? 'any number or %' : w) + '</code>'; }).join(' ') + '</p>';
+  });
+  html += '<p style="margin:10px 0 0"><b>Safety rules:</b> fewer than ' + t.minWords + ' words → 0 and teacher check · many repeated words (keyword stuffing) → 0 and teacher check' + (t.misconceptions.length ? ' · common misconception (e.g. “metal is colder”) → max ' + t.misconceptions[0].capAt + ' point' : '') + '.</p>';
+  html += '<p class="muted" style="margin:6px 0 0;font-size:15px"><code>stem*</code> means any ending, e.g. <code>heat*</code> = heat, heats, heating.</p>';
+  document.getElementById('rules').innerHTML = html;
+}
+
+function renderAudit(id){
+  var rows = document.getElementById('audit'); rows.innerHTML = '';
+  var all = 0, agree = 0;
+  RUBRIC_SAMPLES.forEach(function(s){
+    var r = RubricBot.score(s.task, s.answer); all++; if (r.score === s.human) agree++;
+    if (s.task !== id) return;
+    var tr = document.createElement('tr');
+    tr.innerHTML = '<td>' + esc(s.answer.length > 80 ? s.answer.slice(0, 80) + '…' : s.answer) + '</td><td>' + s.human + '</td><td>' + r.score + '</td><td>' + (r.score === s.human ? '<span class="ok">✓</span>' : '<span class="no">✗</span>') + '</td>';
+    rows.appendChild(tr);
+  });
+  document.getElementById('agreeTxt').textContent = agree + '/' + all + ' = ' + Math.round(agree / all * 100) + '%';
+}
+
+document.querySelectorAll('[data-task]').forEach(function(b){ b.addEventListener('click', function(){ setTask(b.getAttribute('data-task')); }); });
+document.getElementById('go').addEventListener('click', run);
+setTask('spoon');
+
+// Live status of the latest GitHub Actions run (public API, no login)
+function ago(iso){ var s = Math.max(0, (Date.now() - new Date(iso).getTime()) / 1000);
+  return s < 60 ? Math.round(s) + ' s ago' : s < 3600 ? Math.round(s/60) + ' min ago' : s < 86400 ? Math.round(s/3600) + ' h ago' : Math.round(s/86400) + ' days ago'; }
+function loadRun(){
+  var dot = document.getElementById('dot'), title = document.getElementById('runTitle'), meta = document.getElementById('runMeta');
+  fetch('https://api.github.com/repos/' + OWNER + '/' + REPO + '/actions/runs?per_page=1')
+    .then(function(r){ if (!r.ok) throw new Error(r.status); return r.json(); })
+    .then(function(d){
+      var run = d.workflow_runs && d.workflow_runs[0];
+      if (!run) { dot.className = 'dot none'; title.textContent = 'No audit runs yet'; meta.textContent = ''; return; }
+      if (run.status !== 'completed') { dot.className = 'dot run'; title.textContent = 'Auditing the new rules…'; }
+      else if (run.conclusion === 'success') { dot.className = 'dot ok'; title.textContent = '✓ Audit passed: bot agrees with the teacher'; }
+      else { dot.className = 'dot bad'; title.textContent = '✗ Audit failed: too many disagreements'; }
+      var msg = (run.head_commit && run.head_commit.message || run.display_title || '').split('\n')[0];
+      meta.textContent = '“' + msg + '” · ' + ago(run.created_at);
+      document.getElementById('runLink').href = run.html_url;
+    })
+    .catch(function(){ dot.className = 'dot none'; title.textContent = 'Could not reach GitHub right now'; meta.textContent = 'Use the “Open on GitHub” link instead.'; });
+}
+document.getElementById('refresh').addEventListener('click', loadRun);
+loadRun(); setInterval(loadRun, 90000);
+
+document.getElementById('url').textContent = location.href.replace(/^https?:\/\//, '');
+try { new QRCode(document.getElementById('qr'), { text: location.href, width: 170, height: 170 }); } catch (e) { document.getElementById('qr').hidden = true; }
+</script>
+</body>
+</html>
